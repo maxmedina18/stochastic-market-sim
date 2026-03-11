@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from stoch.paths import simulate_geometric_brownian_motion
-
+from market_lab.models.stochastic.gbm import simulate_geometric_brownian_motion
 
 def main():
     T = 1.0

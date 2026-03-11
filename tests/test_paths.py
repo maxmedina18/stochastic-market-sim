@@ -1,6 +1,6 @@
 import numpy as np
-from stoch.paths import simulate_brownian_motion
-from stoch.paths import simulate_geometric_brownian_motion
+from market_lab.models.stochastic.brownian_motion import simulate_brownian_motion
+from market_lab.models.stochastic.gbm import simulate_geometric_brownian_motion
 
 
 def test_brownian_motion_statistics():

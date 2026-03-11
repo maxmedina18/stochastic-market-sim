@@ -3,8 +3,8 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "stoch"
+name = "spectra"
 version = "0.1.0"
 
 [tool.setuptools.packages.find]
-include = ["stoch*"]
+include = ["market_lab*"]
