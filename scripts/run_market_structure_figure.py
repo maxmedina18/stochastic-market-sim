@@ -120,6 +120,11 @@ def main() -> None:
         bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
         verticalalignment="top",
     )
+    plt.savefig(
+    "spectra_market_structure.png",
+    dpi=300,
+    bbox_inches="tight"
+)
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.show()
