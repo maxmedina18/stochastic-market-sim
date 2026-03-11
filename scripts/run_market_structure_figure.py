@@ -57,76 +57,103 @@ def main() -> None:
     H = hurst_exponent(prices, max_lag=100)
     hurst_class = classify_hurst(H)
 
-    fig, axes = plt.subplots(3, 2, figsize=(15, 12))
+    from matplotlib.gridspec import GridSpec
+
+    fig = plt.figure(figsize=(17, 12))
+    gs = GridSpec(
+        3,
+        3,
+        figure=fig,
+        width_ratios=[1.0, 1.0, 0.38],
+        hspace=0.38,
+        wspace=0.28,
+    )
+
     fig.suptitle(f"Spectra Market Structure Summary — {ticker}", fontsize=16)
 
+    ax_price = fig.add_subplot(gs[0, 0])
+    ax_dist = fig.add_subplot(gs[0, 1])
+    ax_returns = fig.add_subplot(gs[1, 0])
+    ax_qq = fig.add_subplot(gs[1, 1])
+    ax_regimes = fig.add_subplot(gs[2, 0])
+    ax_garch = fig.add_subplot(gs[2, 1])
+    ax_summary = fig.add_subplot(gs[:, 2])
+
     # 1. Price series
-    axes[0, 0].plot(prices, color="black", linewidth=1.2)
-    axes[0, 0].set_title("Price Series")
-    axes[0, 0].set_xlabel("Time Index")
-    axes[0, 0].set_ylabel("Price")
+    ax_price.plot(prices, color="black", linewidth=1.2)
+    ax_price.set_title("Price Series")
+    ax_price.set_xlabel("Time Index")
+    ax_price.set_ylabel("Price")
 
     # 2. Return distribution + normal overlay
-    axes[0, 1].hist(returns, bins=60, density=True, alpha=0.7)
+    ax_dist.hist(returns, bins=60, density=True, alpha=0.7)
     x = np.linspace(np.min(returns), np.max(returns), 500)
     y = norm.pdf(x, loc=mu, scale=sigma)
-    axes[0, 1].plot(x, y, linewidth=2)
-    axes[0, 1].set_title("Return Distribution vs Normal")
-    axes[0, 1].set_xlabel("Log Return")
-    axes[0, 1].set_ylabel("Density")
+    ax_dist.plot(x, y, linewidth=2)
+    ax_dist.set_title("Return Distribution vs Normal")
+    ax_dist.set_xlabel("Log Return")
+    ax_dist.set_ylabel("Density")
 
     # 3. Log returns
-    axes[1, 0].plot(returns, linewidth=1.0)
-    axes[1, 0].set_title("Log Returns")
-    axes[1, 0].set_xlabel("Time Index")
-    axes[1, 0].set_ylabel("Return")
+    ax_returns.plot(returns, linewidth=1.0)
+    ax_returns.set_title("Log Returns")
+    ax_returns.set_xlabel("Time Index")
+    ax_returns.set_ylabel("Return")
 
     # 4. Q-Q plot
-    probplot(returns, dist="norm", plot=axes[1, 1])
-    axes[1, 1].set_title("Normal Q-Q Plot")
+    probplot(returns, dist="norm", plot=ax_qq)
+    ax_qq.set_title("Normal Q-Q Plot")
 
     # 5. Volatility regimes
-    axes[2, 0].plot(vol_index, realized_vol, color="black", linewidth=1.2, label="Rolling Vol")
+    ax_regimes.plot(vol_index, realized_vol, color="black", linewidth=1.2, label="Rolling Vol")
     high_vol = regimes == 1
     low_vol = regimes == 0
-    axes[2, 0].scatter(vol_index[high_vol], realized_vol[high_vol], color="red", s=10, label="High Vol")
-    axes[2, 0].scatter(vol_index[low_vol], realized_vol[low_vol], color="blue", s=10, label="Low Vol")
-    axes[2, 0].set_title("Volatility Regimes")
-    axes[2, 0].set_xlabel("Time Index")
-    axes[2, 0].set_ylabel("Volatility")
-    axes[2, 0].legend()
+    ax_regimes.scatter(vol_index[high_vol], realized_vol[high_vol], color="red", s=10, label="High Vol")
+    ax_regimes.scatter(vol_index[low_vol], realized_vol[low_vol], color="blue", s=10, label="Low Vol")
+    ax_regimes.set_title("Volatility Regimes")
+    ax_regimes.set_xlabel("Time Index")
+    ax_regimes.set_ylabel("Volatility")
+    ax_regimes.legend(loc="upper right", fontsize=9, frameon=True)
 
     # 6. GARCH vs realized volatility
-    axes[2, 1].plot(garch_vol, color="black", linewidth=1.2, label="GARCH Vol")
-    axes[2, 1].plot(vol_index, realized_vol, color="red", alpha=0.7, label="Realized Vol")
-    axes[2, 1].set_title("GARCH vs Realized Volatility")
-    axes[2, 1].set_xlabel("Time Index")
-    axes[2, 1].set_ylabel("Volatility")
-    axes[2, 1].legend()
+    ax_garch.plot(garch_vol, color="black", linewidth=1.2, label="GARCH Vol")
+    ax_garch.plot(vol_index, realized_vol, color="red", alpha=0.7, label="Realized Vol")
+    ax_garch.set_title("GARCH vs Realized Volatility")
+    ax_garch.set_xlabel("Time Index")
+    ax_garch.set_ylabel("Volatility")
+    ax_garch.legend(loc="upper right", fontsize=9, frameon=True)
 
-    # Add summary text box
+    # 7. Summary panel
+    current_regime = "HIGH_VOL" if regimes[-1] == 1 else "LOW_VOL"
+
     summary = (
+        "Market Diagnostics\n"
+        "------------------\n\n"
         f"Hurst exponent: {H:.3f}\n"
         f"Behavior: {hurst_class}\n"
-        f"Current regime: {'HIGH_VOL' if regimes[-1] == 1 else 'LOW_VOL'}\n"
-        f"GARCH α+β: {alpha + beta:.2f}"
+        f"Current regime: {current_regime}\n"
+        f"GARCH α+β: {alpha + beta:.2f}\n\n"
+        f"Mean return: {mu:.5f}\n"
+        f"Std dev: {sigma:.5f}"
     )
 
-    fig.text(
-        0.78,
-        0.92,
+    ax_summary.axis("off")
+    ax_summary.text(
+        0.02,
+        0.98,
         summary,
-        fontsize=10,
-        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+        transform=ax_summary.transAxes,
+        fontsize=11,
         verticalalignment="top",
+        bbox=dict(
+            boxstyle="round,pad=0.6",
+            facecolor="white",
+            edgecolor="black",
+            alpha=0.95,
+        ),
     )
-    plt.savefig(
-    "spectra_market_structure.png",
-    dpi=300,
-    bbox_inches="tight"
-)
 
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.tight_layout(rect=[0, 0, 1, 0.97])
     plt.show()
 
 
